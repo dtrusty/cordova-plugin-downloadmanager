@@ -45,7 +45,7 @@ public class DownloadManager extends CordovaPlugin {
             android.app.DownloadManager.Request request = new android.app.DownloadManager.Request(Download_Uri);
 
             //add any cookies
-            String cookies = CookieManager.getInstance().getCookie(url);
+            String cookies = CookieManager.getInstance().getCookie(message);
             if(cookies != null){
                 request.addRequestHeader("cookie", cookies);
             }
