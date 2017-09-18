@@ -1,6 +1,7 @@
 package downloadmanager;
 
 import android.content.Context;
+import android.content.*;
 import android.net.Uri;
 import android.os.Environment;
 
@@ -15,6 +16,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
 import android.webkit.CookieManager;
+import android.widget.Toast;
+import android.database.Cursor;
 
 /**
  * This class echoes a string called from JavaScript.
@@ -40,7 +43,8 @@ public class DownloadManager extends CordovaPlugin {
 
                 callbackContext.error("Error in converting filename");
             }
-            android.app.DownloadManager downloadManager = (android.app.DownloadManager) cordova.getActivity().getApplicationContext().getSystemService(Context.DOWNLOAD_SERVICE);            
+            filename = "export.xlsx";
+            final android.app.DownloadManager downloadManager = (android.app.DownloadManager) cordova.getActivity().getApplicationContext().getSystemService(Context.DOWNLOAD_SERVICE);
             Uri Download_Uri = Uri.parse(message);
             android.app.DownloadManager.Request request = new android.app.DownloadManager.Request(Download_Uri);
 
@@ -59,10 +63,42 @@ public class DownloadManager extends CordovaPlugin {
             //Set a description of this download, to be displayed in notifications (if enabled)
             request.setDescription("DataSync File Download.");
             //Set the local destination for the downloaded file to a path within the application's external files directory            
-            request.setDestinationInExternalFilesDir(cordova.getActivity().getApplicationContext(), Environment.DIRECTORY_DOWNLOADS, filename);
+            //request.setDestinationInExternalFilesDir(cordova.getActivity().getApplicationContext(), Environment.DIRECTORY_DOWNLOADS, filename);
+            request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, filename);
+
             //Set visiblity after download is complete
             request.setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-            long downloadReference = downloadManager.enqueue(request);
+            final long downloadReference = downloadManager.enqueue(request);
+
+            Toast.makeText(cordova.getActivity().getApplicationContext(), "Downloading File",
+                    Toast.LENGTH_LONG).show();
+
+            BroadcastReceiver receiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    String action = intent.getAction();
+                    if (android.app.DownloadManager.ACTION_DOWNLOAD_COMPLETE.equals(action)) {
+                        long downloadId = intent.getLongExtra(
+                                android.app.DownloadManager.EXTRA_DOWNLOAD_ID, 0);
+                        android.app.DownloadManager.Query query = new android.app.DownloadManager.Query();
+                        query.setFilterById(downloadReference);
+                        Cursor c = downloadManager.query(query);
+                        if (c.moveToFirst()) {
+                            int columnIndex = c
+                                    .getColumnIndex(android.app.DownloadManager.COLUMN_STATUS);
+                            if (android.app.DownloadManager.STATUS_SUCCESSFUL == c
+                                    .getInt(columnIndex)) {
+
+                                Toast.makeText(context, "Download Finished", Toast.LENGTH_LONG).show();
+                            }
+                        }
+                    }
+                }
+            };
+
+            cordova.getActivity().getApplicationContext().registerReceiver(receiver, new IntentFilter(
+                    android.app.DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+
             callbackContext.success(message);
         } else {
             callbackContext.error("Expected one non-empty string argument.");
