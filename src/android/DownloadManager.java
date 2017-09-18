@@ -25,7 +25,7 @@ public class DownloadManager extends CordovaPlugin {
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
         if (action.equals("download")) {
             String message = args.getString(0);
-            this.startDownload(message, mimeType callbackContext);
+            this.startDownload(message, callbackContext);
             return true;
         }
         return false;
