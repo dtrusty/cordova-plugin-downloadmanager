@@ -14,6 +14,8 @@ import org.json.JSONObject;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
+import android.webkit.CookieManager;
+
 /**
  * This class echoes a string called from JavaScript.
  */
@@ -23,7 +25,7 @@ public class DownloadManager extends CordovaPlugin {
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
         if (action.equals("download")) {
             String message = args.getString(0);
-            this.startDownload(message, callbackContext);
+            this.startDownload(message, mimeType callbackContext);
             return true;
         }
         return false;
@@ -41,6 +43,13 @@ public class DownloadManager extends CordovaPlugin {
             android.app.DownloadManager downloadManager = (android.app.DownloadManager) cordova.getActivity().getApplicationContext().getSystemService(Context.DOWNLOAD_SERVICE);            
             Uri Download_Uri = Uri.parse(message);
             android.app.DownloadManager.Request request = new android.app.DownloadManager.Request(Download_Uri);
+
+            //add any cookies
+            String cookies = CookieManager.getInstance().getCookie(url);
+            if(cookies != null){
+                request.addRequestHeader("cookie", cookies);
+            }
+            
             //Restrict the types of networks over which this download may proceed.
             request.setAllowedNetworkTypes(android.app.DownloadManager.Request.NETWORK_WIFI | android.app.DownloadManager.Request.NETWORK_MOBILE);
             //Set whether this download may proceed over a roaming connection.
