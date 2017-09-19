@@ -28,22 +28,19 @@ public class DownloadManager extends CordovaPlugin {
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
         if (action.equals("download")) {
             String message = args.getString(0);
-            this.startDownload(message, callbackContext);
+            String filename = args.getString(1);
+            String downloadingMessage = args.getString(2);
+            String downloadedMessage = args.getString(3);
+            this.startDownload(message, filename, downloadingMessage, downloadedMessage, callbackContext);
             return true;
         }
         return false;
     }
 
-    private void startDownload(String message, CallbackContext callbackContext) {
+    private void startDownload(String message, String filename, String downloadingMessage, final String downloadedMessage,
+                               CallbackContext callbackContext) {
         if (message != null && message.length() > 0) {
-            String filename = message.substring(message.lastIndexOf("/")+1, message.length());
-            try {
-                filename = URLDecoder.decode(filename,"UTF-8");
-            } catch (UnsupportedEncodingException e) {
 
-                callbackContext.error("Error in converting filename");
-            }
-            filename = "export.xlsx";
             final android.app.DownloadManager downloadManager = (android.app.DownloadManager) cordova.getActivity().getApplicationContext().getSystemService(Context.DOWNLOAD_SERVICE);
             Uri Download_Uri = Uri.parse(message);
             android.app.DownloadManager.Request request = new android.app.DownloadManager.Request(Download_Uri);
@@ -70,7 +67,7 @@ public class DownloadManager extends CordovaPlugin {
             request.setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
             final long downloadReference = downloadManager.enqueue(request);
 
-            Toast.makeText(cordova.getActivity().getApplicationContext(), "Downloading File",
+            Toast.makeText(cordova.getActivity().getApplicationContext(), downloadingMessage,
                     Toast.LENGTH_LONG).show();
 
             BroadcastReceiver receiver = new BroadcastReceiver() {
@@ -89,7 +86,7 @@ public class DownloadManager extends CordovaPlugin {
                             if (android.app.DownloadManager.STATUS_SUCCESSFUL == c
                                     .getInt(columnIndex)) {
 
-                                Toast.makeText(context, "Download Finished", Toast.LENGTH_LONG).show();
+                                Toast.makeText(context, downloadedMessage, Toast.LENGTH_LONG).show();
                             }
                         }
                     }
